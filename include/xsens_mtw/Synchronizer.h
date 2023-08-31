@@ -6,7 +6,7 @@
 #include <map>
 
 // ROS dependencies
-#include "ros/ros.h"
+#include "rclcpp/rclcpp.hpp"
 
 // Xsens dependencies
 #include "xsensdeviceapi.h"

@@ -7,6 +7,9 @@
 
 // Xsens dependencies
 #include "xsensdeviceapi.h"
+#include "xsmutex.h"
+
+
 
 namespace hiros {
   namespace xsens_mtw {

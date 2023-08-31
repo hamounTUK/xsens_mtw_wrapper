@@ -5,7 +5,7 @@
   <arg name="node_name"                 default="xsens_mtw"           />
   <arg name="tf_prefix"                 default=""                    />
 
-  <arg name="desired_update_rate"       default="100"                 />
+  <arg name="desired_update_rate"       default="60"                 />
   <arg name="desired_radio_channel"     default="19"                  />
 
   <arg name="reset_initial_orientation" default="false"               />
@@ -44,5 +44,6 @@
     <param name="publish_free_acceleration" type="bool"   value="$(arg publish_free_acceleration)" />
     <param name="publish_pressure"          type="bool"   value="$(arg publish_pressure)"          />
     <param name="publish_tf"                type="bool"   value="$(arg publish_tf)"                />
+
   </node>
 </launch>

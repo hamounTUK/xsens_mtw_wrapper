@@ -1,31 +1,29 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>hiros_xsens_mtw_wrapper</name>
-  <version>0.1.0</version>
-  <description>Hi-ROS mantained xsens_mtw_wrapper package for ROS2</description>
-  <maintainer email="hamounheidarshenas@gmail.com">Hamoun Heidarshenas</maintainer>  
-  <license>TODO</license>
-
-  <url type="website">https://gitlab.com/hamounTUK</url>
-  
+  <version>0.0.1</version>
+  <description>MTw Wrapper</description>
+  <maintainer email="hamoun.heidarshenas@dfki.de">common</maintainer>
+  <license>TODO: License declaration</license>
 
 
-
-
+  <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>rclcpp</depend>
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
+  <depend>vi_interfaces</depend>
+
 
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
-  <!-- <build_depend>cmake_modules</build_depend> -->
-  <!-- <build_depend>message_generation</build_depend> -->
-  <!-- <build_export_depend>message_runtime</build_export_depend> -->
-  <!-- <exec_depend>message_runtime</exec_depend> -->
-
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 
 </package>

@@ -6,22 +6,55 @@
 #include <deque>
 
 // ROS dependencies
-#include "geometry_msgs/Vector3Stamped.h"
-#include "ros/ros.h"
-#include "sensor_msgs/FluidPressure.h"
-#include "sensor_msgs/Imu.h"
-#include "sensor_msgs/MagneticField.h"
-#include "std_msgs/Header.h"
-#include "tf2_ros/transform_broadcaster.h"
+// #include "geometry_msgs/msg/Vector3Stamped.h"
+// #include "ros/ros.h"
+// #include "sensor_msgs/msg/FluidPressure.h"
+// #include "sensor_msgs/msg/Imu.h"
+// #include "sensor_msgs/msg/MagneticField.h"
+// #include "std_msgs/Header.h"
+// #include "tf2_ros/transform_broadcaster.h"
 
-// Internal dependencies
-#include "hiros_xsens_mtw_wrapper/Euler.h"
-#include "hiros_xsens_mtw_wrapper/MIMU.h"
-#include "hiros_xsens_mtw_wrapper/MIMUArray.h"
-#include "hiros_xsens_mtw_wrapper/ResetOrientation.h"
+// Internal dependencies ROS1
+// #include "hiros_xsens_mtw_wrapper/Euler.h"
+// #include "hiros_xsens_mtw_wrapper/MIMU.h"
+// #include "hiros_xsens_mtw_wrapper/MIMUArray.h"
+// #include "hiros_xsens_mtw_wrapper/ResetOrientation.h"
+// #include "xsens_mtw/MtwCallback.h"
+// #include "xsens_mtw/Synchronizer.h"
+// #include "xsens_mtw/WirelessMasterCallback.h"
+
+
+
+// ROS2 dependencies
+// #include "geometry_msgs/msg/Vector3Stamped.h"
+// #include "ros/ros.h"
+// #include "sensor_msgs/msg/FluidPressure.h"
+// #include "sensor_msgs/msg/Imu.h"
+// #include "sensor_msgs/msg/MagneticField.h"
+// #include "std_msgs/Header.h"
+// #include "tf2_ros/transform_broadcaster.h"
+
+
+// Internal dependencies ROS2
+
+#include "vi_interfaces/msg/euler.hpp"
+#include "vi_interfaces/msg/mimu.hpp"
+#include "vi_interfaces/msg/mimu_array.hpp"
+
+#include "vi_interfaces/srv/reset_orientation.hpp"
+
+
 #include "xsens_mtw/MtwCallback.h"
 #include "xsens_mtw/Synchronizer.h"
 #include "xsens_mtw/WirelessMasterCallback.h"
+
+
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "tf2_ros/transform_broadcaster.h"
+
+#include "xsensdeviceapi.h"
+
+
 
 #define BASH_MSG_RESET "\033[0m"
 #define BASH_MSG_GREEN "\033[32m"
@@ -58,7 +91,7 @@ namespace hiros {
       bool publish_tf;
     };
 
-    class Wrapper
+    class Wrapper : public rclcpp::Node
     {
     public:
       Wrapper();
@@ -104,19 +137,20 @@ namespace hiros {
       void publishPacket(const std::shared_ptr<XsDataPacket>& t_packet);
       void publishFrame(const std::vector<std::shared_ptr<XsDataPacket>>& t_frame);
 
-      std_msgs::Header getHeader(const std::shared_ptr<XsDataPacket>& t_packet) const;
-      sensor_msgs::Imu getImuMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
-      sensor_msgs::MagneticField getMagMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
-      hiros_xsens_mtw_wrapper::Euler getEulerMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
-      geometry_msgs::Vector3Stamped getFreeAccelerationMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
-      sensor_msgs::FluidPressure getPressureMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
-      hiros_xsens_mtw_wrapper::MIMU getMIMUMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
-      hiros_xsens_mtw_wrapper::MIMUArray
-      getMIMUArrayMsg(const std::vector<std::shared_ptr<XsDataPacket>>& t_frame) const;
-      geometry_msgs::TransformStamped getTf(const std::shared_ptr<XsDataPacket>& t_packet) const;
+      std_msgs::msg::Header getHeader(const std::shared_ptr<XsDataPacket>& t_packet) const;
+      sensor_msgs::msg::Imu getImuMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
+      sensor_msgs::msg::MagneticField getMagMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
+      vi_interfaces::msg::Euler getEulerMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
+      geometry_msgs::msg::Vector3Stamped getFreeAccelerationMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
+      sensor_msgs::msg::FluidPressure getPressureMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
+      vi_interfaces::msg::MIMU getMIMUMsg(const std::shared_ptr<XsDataPacket>& t_packet) const;
+      vi_interfaces::msg::MIMUArray getMIMUArrayMsg(const std::vector<std::shared_ptr<XsDataPacket>>& t_frame) const;
+      geometry_msgs::msg::TransformStamped getTf(const std::shared_ptr<XsDataPacket>& t_packet) const;
 
-      bool resetOrientation(hiros_xsens_mtw_wrapper::ResetOrientation::Request& t_req,
-                            hiros_xsens_mtw_wrapper::ResetOrientation::Response& t_res);
+      // geometry_msgs::msg::TransformStamped
+
+      bool resetOrientation(vi_interfaces::srv::ResetOrientation::Request& t_req,
+                            vi_interfaces::srv::ResetOrientation::Response& t_res);
 
       static inline void sighandler(int t_sig) { s_request_shutdown = (t_sig == SIGINT); };
 
@@ -142,23 +176,41 @@ namespace hiros {
       std::map<std::string, XsDeviceId> m_labels_to_ids;
 
       long m_initial_packet_id;
-      ros::Time m_initial_timestamp;
+      // ros::Time m_initial_timestamp;
+      rclcpp::Time m_initial_timestamp;
+
 
       bool m_xsens_mtw_configured;
 
-      ros::NodeHandle m_nh;
+      // ros::NodeHandle m_nh;
+
       std::string m_node_namespace;
 
       const unsigned int m_ros_topic_queue_size = 10;
 
-      ros::ServiceServer m_reset_orientation_srv;
-      ros::Publisher m_data_pub;
-      std::map<XsDeviceId, ros::Publisher> m_imu_pubs;
-      std::map<XsDeviceId, ros::Publisher> m_mag_pubs;
-      std::map<XsDeviceId, ros::Publisher> m_euler_pubs;
-      std::map<XsDeviceId, ros::Publisher> m_free_acceleration_pubs;
-      std::map<XsDeviceId, ros::Publisher> m_pressure_pubs;
-      tf2_ros::TransformBroadcaster m_tf_broadcaster;
+      // ros::ServiceServer m_reset_orientation_srv;
+      rclcpp::Service<vi_interfaces::srv::ResetOrientation>::SharedPtr m_reset_orientation_srv;
+
+
+      //ros::Publisher m_data_pub;
+      rclcpp::Publisher<vi_interfaces::msg::MIMUArray>::SharedPtr m_data_pub;
+
+      // std::map<XsDeviceId, ros::Publisher> m_imu_pubs;
+      // std::map<XsDeviceId, ros::Publisher> m_mag_pubs;
+      // std::map<XsDeviceId, ros::Publisher> m_euler_pubs;
+      // std::map<XsDeviceId, ros::Publisher> m_free_acceleration_pubs;
+      // std::map<XsDeviceId, ros::Publisher> m_pressure_pubs;
+
+      std::map<XsDeviceId, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> m_imu_pubs;
+      std::map<XsDeviceId, rclcpp::Publisher<sensor_msgs::msg::MagneticField>::SharedPtr> m_mag_pubs;
+      std::map<XsDeviceId, rclcpp::Publisher<vi_interfaces::msg::Euler>::SharedPtr> m_euler_pubs;
+      std::map<XsDeviceId, rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr> m_free_acceleration_pubs;
+      std::map<XsDeviceId, rclcpp::Publisher<sensor_msgs::msg::FluidPressure>::SharedPtr> m_pressure_pubs;
+      
+
+      // tf2_ros::TransformBroadcaster m_tf_broadcaster;
+
+      std::unique_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
 
       static bool s_request_shutdown;
     };
