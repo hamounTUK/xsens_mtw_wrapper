@@ -3,7 +3,10 @@
 
 // Xsens dependencies
 #include "xsensdeviceapi.h"
-#include "xsmutex.h"
+// #include "xsmutex.h"
+#include <xsens/xsmutex.h>
+
+
 
 
 // Internal dependencies

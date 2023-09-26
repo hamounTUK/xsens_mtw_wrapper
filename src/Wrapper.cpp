@@ -4,7 +4,8 @@
 // Internal dependencies
 #include "xsens_mtw/Wrapper.h"
 
-#include "xstypes/xstime.h"
+// #include "xstypes/xstime.h"
+#include <xsens/xstime.h>
 
 
 bool hiros::xsens_mtw::Wrapper::s_request_shutdown = false;
@@ -24,7 +25,7 @@ bool hiros::xsens_mtw::Wrapper::s_request_shutdown = false;
 
 
 hiros::xsens_mtw::Wrapper::Wrapper()
-  : Node("hiros_xsens")
+  : Node("ros2_xsens_mtw_wrapper_node")
 {
 
   this->declare_parameter<bool>("xsens_mtw_node_required", false);
@@ -69,9 +70,6 @@ hiros::xsens_mtw::Wrapper::Wrapper()
 
 
   start();
-
-std::cout<< "DON WITH START";
-
   run();
 
 
@@ -149,6 +147,7 @@ void hiros::xsens_mtw::Wrapper::run()
   }
 
 
+
   while (rclcpp::ok() && !s_request_shutdown) {
     for (auto& device : m_connected_devices) {
       if (m_mtw_callbacks.at(device.first)->newDataAvailable()) {
@@ -175,7 +174,9 @@ void hiros::xsens_mtw::Wrapper::run()
         }
       }
     }
+
   }
+
 
   stop();
 }
