@@ -140,30 +140,21 @@ void hiros::xsens_mtw::Wrapper::run()
 {
   RCLCPP_INFO_STREAM(this->get_logger(), BASH_MSG_GREEN << "Xsens Mtw Wrapper... RUNNING" << BASH_MSG_RESET);
 
-
   std::unique_ptr<Synchronizer> sync;
   if (m_wrapper_params.synchronize) {
     sync = std::make_unique<Synchronizer>(m_mtw_callbacks, sync_policy_map.at(m_wrapper_params.sync_policy_name));
   }
 
-
-
   while (rclcpp::ok() && !s_request_shutdown) {
     for (auto& device : m_connected_devices) {
+
       if (m_mtw_callbacks.at(device.first)->newDataAvailable()) {
-
         if (m_wrapper_params.synchronize) {
-
           sync->add(m_mtw_callbacks.at(device.first)->getLatestPacket());
         }
         else {
-
-
           publishPacket(m_mtw_callbacks.at(device.first)->getLatestPacket());
-
-          RCLCPP_INFO_STREAM(this->get_logger(), BASH_MSG_GREEN << "PUB" << BASH_MSG_RESET);
           m_mtw_callbacks.at(device.first)->deleteOldestPacket();
-
         }
       }
 
@@ -176,7 +167,6 @@ void hiros::xsens_mtw::Wrapper::run()
     }
 
   }
-
 
   stop();
 }
@@ -703,6 +693,7 @@ bool hiros::xsens_mtw::Wrapper::setRadioChannel()
   return true;
 }
 
+
 bool hiros::xsens_mtw::Wrapper::disableRadio()
 {
   RCLCPP_DEBUG_STREAM(this->get_logger(), "Xsens Mtw Wrapper... Disabling radio");
@@ -831,12 +822,17 @@ void hiros::xsens_mtw::Wrapper::syncInitialPackets()
   //                              [](std::map<XsDeviceId, double>::const_reference t1,
   //                                 std::map<XsDeviceId, double>::const_reference t2) { return t1.second < t2.second; })
   //               ->second);
-  m_initial_timestamp =
-    rclcpp::Time(std::min_element(initial_timestamps.begin(),
-                               initial_timestamps.end(),
-                               [](std::map<XsDeviceId, double>::const_reference t1,
-                                  std::map<XsDeviceId, double>::const_reference t2) { return t1.second < t2.second; })
-                ->second);
+  
+  // m_initial_timestamp =
+  //   rclcpp::Time(std::min_element(initial_timestamps.begin(),
+  //                              initial_timestamps.end(),
+  //                              [](std::map<XsDeviceId, double>::const_reference t1,
+  //                                 std::map<XsDeviceId, double>::const_reference t2) { return t1.second < t2.second; })
+  //               ->second);
+
+  m_initial_timestamp = this->now();
+
+  // RCLCPP_INFO_STREAM(this->get_logger(), m_initial_timestamp.seconds() << "   " <<  m_initial_timestamp.nanoseconds());
 }
 
 bool hiros::xsens_mtw::Wrapper::resetInitialOrientation() const
@@ -876,56 +872,81 @@ std::string hiros::xsens_mtw::Wrapper::composeTopicPrefix(const XsDeviceId& t_id
 
 void hiros::xsens_mtw::Wrapper::publishPacket(const std::shared_ptr<XsDataPacket>& t_packet)
 {
-    RCLCPP_INFO_STREAM(this->get_logger(), BASH_MSG_GREEN << "in publish packet" << BASH_MSG_RESET);
-
 
   if (m_wrapper_params.publish_imu && t_packet->containsOrientation() && t_packet->containsCalibratedGyroscopeData()
       && t_packet->containsCalibratedAcceleration()) {
     m_imu_pubs.at(t_packet->deviceId())->publish(getImuMsg(t_packet));
   }
 
-    RCLCPP_INFO_STREAM(this->get_logger(), BASH_MSG_GREEN << "F1" << BASH_MSG_RESET);
-
 
   if (m_wrapper_params.publish_mag && t_packet->containsCalibratedMagneticField()) {
     m_mag_pubs.at(t_packet->deviceId())->publish(getMagMsg(t_packet));
   }
-
-    RCLCPP_INFO_STREAM(this->get_logger(), BASH_MSG_GREEN << "F2" << BASH_MSG_RESET);
 
 
   if (m_wrapper_params.publish_euler && t_packet->containsOrientation()) {
     m_euler_pubs.at(t_packet->deviceId())->publish(getEulerMsg(t_packet));
   }
 
-    RCLCPP_INFO_STREAM(this->get_logger(), BASH_MSG_GREEN << "F3" << BASH_MSG_RESET);
 
   if (m_wrapper_params.publish_free_acceleration && t_packet->containsFreeAcceleration()) {
     m_free_acceleration_pubs.at(t_packet->deviceId())->publish(getFreeAccelerationMsg(t_packet));
   }
 
-    RCLCPP_INFO_STREAM(this->get_logger(), BASH_MSG_GREEN << "F4" << BASH_MSG_RESET);
-
-
   if (m_wrapper_params.publish_pressure && t_packet->containsPressure()) {
     m_pressure_pubs.at(t_packet->deviceId())->publish(getPressureMsg(t_packet));
   }
-
-      RCLCPP_INFO_STREAM(this->get_logger(), BASH_MSG_GREEN << "F5" << BASH_MSG_RESET);
 
 
   if (m_wrapper_params.publish_tf && t_packet->containsOrientation()) {
     m_tf_broadcaster->sendTransform(getTf(t_packet));
   }
 
-      RCLCPP_INFO_STREAM(this->get_logger(), BASH_MSG_GREEN << "end publish pack" << BASH_MSG_RESET);
 
 }
 
 void hiros::xsens_mtw::Wrapper::publishFrame(const std::vector<std::shared_ptr<XsDataPacket>>& t_frame)
 {
   if (m_wrapper_params.publish_mimu_array) {
-    m_data_pub->publish(getMIMUArrayMsg(t_frame));
+    
+    vi_interfaces::msg::MIMUArray frame_to_publish;
+    frame_to_publish.mimus = getMIMUArrayMsg(t_frame).mimus;
+
+
+
+    //hh
+    // std_msgs::msg::Header frame_header;
+    // frame_header.stamp = std::max_element(frame_to_publish.mimus.begin(), frame_to_publish.mimus.end(),
+    //                     [](const vi_interfaces::msg::MIMU& a, const vi_interfaces::msg::MIMU& b) {
+    //                         return a.imu.header.stamp.nanosec < b.imu.header.stamp.nanosec;
+    //                      })->imu.header.stamp;
+
+
+    // std_msgs::msg::Header frame_header;
+    frame_to_publish.header.stamp = std::max_element(frame_to_publish.mimus.begin(), frame_to_publish.mimus.end(),
+                        [](const vi_interfaces::msg::MIMU& a, const vi_interfaces::msg::MIMU& b) {
+                            return (a.imu.header.stamp.sec < b.imu.header.stamp.sec)
+                                || (((a.imu.header.stamp.sec == b.imu.header.stamp.sec)) && (a.imu.header.stamp.nanosec < b.imu.header.stamp.nanosec));
+                         })->imu.header.stamp;                     
+    //hh
+
+    bool print_mes = false;
+    for(auto &one_imu : frame_to_publish.mimus){
+      if(one_imu.imu.header.stamp.sec != frame_to_publish.header.stamp.sec){print_mes = true;}
+      if(one_imu.imu.header.stamp.nanosec != frame_to_publish.header.stamp.nanosec){print_mes = true;}
+
+    }
+    print_mes = false;
+    if(print_mes){
+      for(auto &one_imu : frame_to_publish.mimus){
+        RCLCPP_INFO_STREAM(this->get_logger(),one_imu.imu.header.stamp.sec << "   " << one_imu.imu.header.stamp.nanosec);
+      }
+      RCLCPP_WARN_STREAM(this->get_logger(), frame_to_publish.header.stamp.sec << "   " << frame_to_publish.header.stamp.nanosec);
+      RCLCPP_ERROR_STREAM(this->get_logger(), "                                                                ");
+    }
+    //hh
+
+    m_data_pub->publish(frame_to_publish);
 
     if (m_wrapper_params.publish_tf) {
       for (auto& packet : t_frame) {
@@ -953,14 +974,20 @@ std_msgs::msg::Header hiros::xsens_mtw::Wrapper::getHeader(const std::shared_ptr
   // header.stamp = m_initial_timestamp
                 //  + ros::Duration((t_packet->packetId() - m_initial_packet_id) / static_cast<double>(m_update_rate));
 
+  
   double time_in_seconds = (t_packet->packetId() - m_initial_packet_id) / static_cast<double>(m_update_rate);
   int64_t nanoseconds = static_cast<int64_t>(time_in_seconds * 1e9);
+
   header.stamp = m_initial_timestamp + rclcpp::Duration::from_nanoseconds(nanoseconds);
 
   // header.stamp = m_initial_timestamp
                 //  + rclcpp::Duration((t_packet->packetId() - m_initial_packet_id) / static_cast<double>(m_update_rate));
                  
   header.frame_id = m_wrapper_params.tf_prefix + getDeviceLabel(t_packet->deviceId());
+  
+// RCLCPP_WARN_STREAM(this->get_logger(), rclcpp::Duration::from_nanoseconds(nanoseconds););
+  // RCLCPP_WARN_STREAM(this->get_logger(), header.stamp.nanosec);
+
 
   return header;
 }
@@ -1051,6 +1078,7 @@ vi_interfaces::msg::MIMU hiros::xsens_mtw::Wrapper::getMIMUMsg(const std::shared
   // hiros_xsens_mtw_wrapper::MIMU out_msg;
   vi_interfaces::msg::MIMU out_msg;
 
+  out_msg.sensor_id = t_packet->deviceId().toString().toStdString();
 
   if (m_wrapper_params.publish_imu && t_packet->containsOrientation() && t_packet->containsCalibratedGyroscopeData()
       && t_packet->containsCalibratedAcceleration()) {
